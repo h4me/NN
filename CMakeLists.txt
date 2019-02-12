@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
+set(CMAKE_CXX_COMPILER "clang++-3.6")
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
