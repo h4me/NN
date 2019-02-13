@@ -73,6 +73,36 @@ struct Ret {
     // operator R() const { return *value; }
 };
 
+template<class T=double>
+class Column {
+  protected:
+     std::shared_ptr<T> ptr;
+     size_t size;
+   public:
+      size_t getSize() { return size; }
+      Column(size_t _size) : size(_size)
+      {
+            ptr = std::shared_ptr<T>(new T[size], std::default_delete<T[]>());
+            if(!ptr)
+            {
+              log("Can not allocate mem");
+            }
+      }
+      T* begin() { return reinterpret_cast<T*>(ptr.get()); }
+      T* end() { return begin()+size; }
+      void show(const char *msg)
+      {
+            std::cout << "------ Column ---" << msg << std::endl;
+
+          size_t cnt=0;
+           std::for_each(begin(),end(),[this,&cnt](T v){
+                std::cout << std::setfill(' ') << std::setw(4) << cnt++ << "|" << std::setfill('0') << std::setw(sizeof(double)*2)  << v << "|" << std::endl;
+
+           });
+
+          std::cout << std::endl;
+      }
+};
 
 
 template<int H, int W, class T=unsigned char>
@@ -122,9 +152,20 @@ protected:
         }
        double bias;
 public:
-       enum { value_H = H, value_W = W, poll_H = H/2, poll_W=W/2 };
+       enum { value_H = H, value_W = W, poll_H = H/2, poll_W=W/2 , value_size = H*W };
+/*
+      Column<H*W> getColumn()
+      {
+                     Column<H*W> col;
+                     std::copy(begin(),end(),col.begin());
+                     return col;
+      }
+*/
 
-
+      T* copy_to(T* output)
+      {
+          return std::copy(begin(),end(),output);
+      }
 
       Matrix<poll_H,poll_W,double> getPolledMatrix()
       {
@@ -173,14 +214,12 @@ public:
            std::cout << "=====> " << name << std::endl;
            for(size_t i=0;i<H;++i)
            {
-
                for(size_t j=0;j<W;++j)
                {
-                 std::cout << "|" << std::setfill('0') << std::setw(sizeof(double)*2) << (*((Array*)(ptr_dynamic.get()))) [i][j];
+                 std::cout << "|" << std::setfill('0') << std::setw(sizeof(double)*2) << (*((Array*)(ptr_dynamic.get()))) [i][j] ;
 
                }
                std::cout << std::endl;
-
            }
 
        }
@@ -442,6 +481,8 @@ void InitPseudoRandom()
 // }
 
 
+
+
 template<class TT>
 void CheckParity()
 {
@@ -507,6 +548,21 @@ auto& layout_list = *PtrLayout;
 CheckParity<decltype(*layout_list.begin())>();
 
 
+
+
+typedef decltype((*layout_list.begin()).getPolledMatrix()) PolledMatrix_t;
+
+
+// PolledMatrix_t::value_H * PolledMatrix_t::value_W ;
+
+//auto final_column_size = layout_list.size() * PolledColumn_t::value_size;
+//log("Need to allocate final_column_size ", final_column_size);
+
+Column<> final_column_size( PolledMatrix_t::value_size * layout_list.size());
+
+
+auto it = final_column_size.begin();
+
 for(auto& _matrix_layout : layout_list)
 {
     // static_assert( (typename Matrix_t::value_H / 2) == 0, "Not parity H");
@@ -517,12 +573,14 @@ for(auto& _matrix_layout : layout_list)
 
       polled_matrix.show("polled");
 
+      it = polled_matrix.copy_to(it);
 
     // int a = _matrix_layout;
 //    auto value =  _matrix_layout.CalculateWeightXMatrix()  +  _matrix_layout.getBias();
 //    value =  Relu(value);
 }
 
+final_column_size.show("final_columns");
 
 
 
