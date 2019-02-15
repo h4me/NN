@@ -584,8 +584,6 @@ final_column_size.show("final_columns");
 
 
 
-
-
 /*
     Matrix<6,7> matrix {
       1,1,1,0,0,0,

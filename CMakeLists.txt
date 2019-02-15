@@ -20,3 +20,4 @@ SET(PROJECT_SOURCE_DIR ${PROJECT_BINARY_DIR}/src)
 
 
 add_executable(neuron ${PROJECT_SOURCE_DIR}/main.cpp)
+add_executable(poc ${PROJECT_SOURCE_DIR}/poc.cpp)
