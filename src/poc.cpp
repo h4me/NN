@@ -12,7 +12,7 @@ struct Case {
      enum { value = N };
      static void proc()
      {
-        std::cout << "Case " << value << std::endl;
+        std::cout << "[ XXX Case XXX ] " << value << std::endl;
         //return 4;
      }
 };
@@ -30,178 +30,111 @@ struct EndOF {};
   template< bool B, class T = void >
   using enable_if_t = typename std::enable_if<B,T>::type;
 
+struct NullType {};
 
-//
-// template<class L>
-// struct Switch;
+template<bool v , class T>
+struct enable_if {
+      typedef NullType type;
+};
 
-struct Default
+
+template <class T>
+struct enable_if<true,T> {
+      typedef T type;
+};
+
+
+
+template<typename T>
+class MyClass
 {
-     static void proc(int size)
-     {
-         std::cout << "Default case" << size <<  std::endl;
-      //   return 3;
-     }
-};
+public:
+    void f(T const& x);
 
-/*
-template<class H, class T>
-struct Switch< std::tuple<H,T> >
-{
-     static void run(int check)
-     {
-         ( H::value == check ) ? H::proc() : Switch<T>::run(check);
-     }
-};
-
-template<class H>
-struct Switch< std::tuple<H,EndOF> >
-{
-     static void run(int check)
-     {
-         ( H::value == check ) ? H::proc() : Default::proc();
-     }
-};
-*/
-
-template<class W>
-struct Wrap {
-  typedef  void type ;
+    template<typename T_ = T>
+    void f(T&& x,
+           typename std::enable_if<!std::is_reference<T_>::value,
+           std::nullptr_t>::type = nullptr);
 };
 
 
-template<int K >
-struct Int2Int {
-  enum { value = K };
-};
 
-template<class H, class ... Tail>
-struct Switch
-{
-   enum { size = sizeof ...(Tail) };
-  //
-  // template<class I, class = void >
-  // static void run(I check)
-  // {
-  //     ( H::value == check ) ? H::proc() : Default::proc(check);
-  // }
-  //
-  // template<class I, typename std::enable_if< (size > 0),int>::type >
-  // static void run(I check)
-  // {
-  //      ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
-  // }
+ template<class T>
+ struct Class {
 
+    typedef typename std::add_lvalue_reference<T>::type E;
 
-
-    template<class I, class=void>
-    static void run(I check)
+    template<class TT>
+    void run(TT p, typename std::enable_if< std::is_same<TT,int>::value,T>::type* = nullptr )
     {
-        ( H::value == check ) ? H::proc() : Default::proc(check);
+         std::cout << "int " << std::endl;
     }
 
-    template< class I, typename std::enable_if< (size == 1 ),I>::type >
-    static void run(I check)
+    template<class TT>
+    void run(TT p, typename std::enable_if< std::is_same<TT,float>::value,T>::type* = nullptr )
     {
-              ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
+         std::cout << "float " << std::endl;
     }
 
-    template< class I, typename std::enable_if< (size > 1 ),I>::type >
-    static void run(I check)
+    template<class TT>
+    void run(TT p, typename std::enable_if< std::is_same<TT,double>::value,T>::type* = nullptr )
     {
-              ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
+             std::cout << "double " << std::endl;
     }
 
 
-
-
-    //
-    // template< class I>
-    // static typename Wrap<typename std::enable_if< (size > 1),I>::type>::type  run(I check)
+    // void run(T p,typename std::enable_if<false,T>::type* =nullptr)
     // {
-    //           ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
+    //      std::cout << "float " << std::endl;
     // }
 
 
-   //
-   //
-  //  template< class I>
-  //  static typename std::enable_if< (size == 1),I>::type  run(I check)
-  //   {
-  //                  ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
-  //   }
-   //
+    //
+    // void run(E p )
+    // {
+    //      std::cout << "double " << std::endl;
+    // }
+    //
+    // void run(E p)
+    // {
+    //      std::cout << "float " <<  std::endl;
+    // }
 
 
 
 
+          // void run(T p)
+          // {
+          //   std::cout << "Copy " << std::endl;
+          // }
 
-};
-//
-//
-// template<int N, class K = void>
-// struct kupa {
-//   enum { value = 0 };
-// };
-//
-// template<int N>
-// struct kupa <N, typename std::enable_if< (N > 20) >::type >  {
-//
-// enum { value = 1 };
-//
-// };
-//
-//
-// template<class R>
-// R fun(int k)
-// {
-//     return 7;
-// }
-//
-// typename std::enable_if<true,int>::type fun(int k)
-// {
-//    return 4;
-// }
-//
-// typename std::enable_if<false,int>::type fun(int k)
-// {
-//    return 4;
-// }
+/*
+         template<class T_ = T >
+         void run(T p, typename std::enable_if<true,T_>::type = 0   ) {
+
+               std::cout << "Reference" << std::endl;
+         }
+*/
+         //
+        //  template<class T_ , typename enable_if<false, typename std::add_lvalue_reference<T>::type>::type >
+        //  void run(T_ p) {
+        //         std::cout << "By reference" << std::endl;
+        //  }
+
+
+ };
+
+
+
 
 
 
 int main(int argc, char **argv) {
 
-//  kupa<10> w;
-  int c = 7;
+  float c = 3.0;
 
+  Class<float> cc;
+  cc.run(c);
 
- Switch<Case_1,Case_2,Case_3,Case_3>::run(c);
-
-//
-// #define MY
-//
-//     int c = 3;
-// #ifdef MY
-//        Switch<Case_1,Case_2,Case_3>::run(c);
-// #else
-//      switch(c)
-//      {
-//         case 1:
-//              Case_1::proc();
-//         break;
-//
-//         case 2:
-//              Case_2::proc();
-//         break;
-//
-//         case 3:
-//               Case_3::proc();
-//         break;
-//
-//         default:
-//             Default::proc();
-//      }
-// #endif
     return 0;
 }
