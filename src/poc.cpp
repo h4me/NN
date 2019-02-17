@@ -1,6 +1,6 @@
 #include <iostream>
 #include "poc.hpp"
-
+#include <type_traits>
 
 
 #include <tuple>
@@ -13,6 +13,7 @@ struct Case {
      static void proc()
      {
         std::cout << "Case " << value << std::endl;
+        //return 4;
      }
 };
 
@@ -26,17 +27,24 @@ struct EndOF {};
 #define L3(x,y,z) std::tuple<x, L2(y,z) >
 
 
+  template< bool B, class T = void >
+  using enable_if_t = typename std::enable_if<B,T>::type;
 
-template<class L>
-struct Switch;
+
+//
+// template<class L>
+// struct Switch;
 
 struct Default
 {
-     static void proc()
+     static void proc(int size)
      {
-         std::cout << "Default case" << std::endl;
+         std::cout << "Default case" << size <<  std::endl;
+      //   return 3;
      }
 };
+
+/*
 template<class H, class T>
 struct Switch< std::tuple<H,T> >
 {
@@ -54,34 +62,105 @@ struct Switch< std::tuple<H,EndOF> >
          ( H::value == check ) ? H::proc() : Default::proc();
      }
 };
+*/
+
+template<class H, class ... Tail>
+struct Switch
+{
+   enum { size = sizeof ...(Tail) };
+  //
+  // template<class I, class = void >
+  // static void run(I check)
+  // {
+  //     ( H::value == check ) ? H::proc() : Default::proc(check);
+  // }
+  //
+  // template<class I, typename std::enable_if< (size > 0),int>::type >
+  // static void run(I check)
+  // {
+  //      ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
+  // }
+
+
+    template<class = void >
+    static void run(int check)
+    {
+        ( H::value == check ) ? H::proc() : Default::proc(check);
+    }
+
+    template< typename std::enable_if< (size > 0),int>::type >
+    static void run(int check)
+    {
+         ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
+    }
+
+
+};
+//
+//
+// template<int N, class K = void>
+// struct kupa {
+//   enum { value = 0 };
+// };
+//
+// template<int N>
+// struct kupa <N, typename std::enable_if< (N > 20) >::type >  {
+//
+// enum { value = 1 };
+//
+// };
+//
+//
+// template<class R>
+// R fun(int k)
+// {
+//     return 7;
+// }
+//
+// typename std::enable_if<true,int>::type fun(int k)
+// {
+//    return 4;
+// }
+//
+// typename std::enable_if<false,int>::type fun(int k)
+// {
+//    return 4;
+// }
+
 
 
 int main(int argc, char **argv) {
 
+//  kupa<10> w;
+  int c = 7;
 
-#define MY
 
-    int c = 3;
-#ifdef MY
-       Switch<L3(Case_1,Case_2,Case_3)>::run(c);
-#else
-     switch(c)
-     {
-        case 1:
-             Case_1::proc();
-        break;
+ Switch<Case_1,Case_2,Case_3,Case_3>::run(c);
 
-        case 2:
-             Case_2::proc();
-        break;
-
-        case 3:
-              Case_3::proc();
-        break;
-
-        default:
-            Default::proc();
-     }
-#endif
+//
+// #define MY
+//
+//     int c = 3;
+// #ifdef MY
+//        Switch<Case_1,Case_2,Case_3>::run(c);
+// #else
+//      switch(c)
+//      {
+//         case 1:
+//              Case_1::proc();
+//         break;
+//
+//         case 2:
+//              Case_2::proc();
+//         break;
+//
+//         case 3:
+//               Case_3::proc();
+//         break;
+//
+//         default:
+//             Default::proc();
+//      }
+// #endif
     return 0;
 }
