@@ -64,20 +64,20 @@ public:
 
     typedef typename std::add_lvalue_reference<T>::type E;
 
-    template<class TT>
-    void run(TT p, typename std::enable_if< std::is_same<TT,int>::value,T>::type* = nullptr )
+    template<class TT, typename std::enable_if< std::is_same<TT,int>::value,T>::type* = nullptr>
+    void run(TT p)
     {
          std::cout << "int " << std::endl;
     }
 
-    template<class TT>
-    void run(TT p, typename std::enable_if< std::is_same<TT,float>::value,T>::type* = nullptr )
+    template<class TT,typename std::enable_if< std::is_same<TT,float>::value,T>::type* = nullptr >
+    void run(TT p)
     {
          std::cout << "float " << std::endl;
     }
 
-    template<class TT>
-    void run(TT p, typename std::enable_if< std::is_same<TT,double>::value,T>::type* = nullptr )
+    template<class TT, typename std::enable_if< std::is_same<TT,double>::value,T>::type* = nullptr>
+    void run(TT p)
     {
              std::cout << "double " << std::endl;
     }
@@ -131,7 +131,7 @@ public:
 
 int main(int argc, char **argv) {
 
-  float c = 3.0;
+  int c = 3;
 
   Class<float> cc;
   cc.run(c);
