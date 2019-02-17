@@ -64,6 +64,17 @@ struct Switch< std::tuple<H,EndOF> >
 };
 */
 
+template<class W>
+struct Wrap {
+  typedef  void type ;
+};
+
+
+template<int K >
+struct Int2Int {
+  enum { value = K };
+};
+
 template<class H, class ... Tail>
 struct Switch
 {
@@ -82,17 +93,47 @@ struct Switch
   // }
 
 
-    template<class = void >
-    static void run(int check)
+
+    template<class I, class=void>
+    static void run(I check)
     {
         ( H::value == check ) ? H::proc() : Default::proc(check);
     }
 
-    template< typename std::enable_if< (size > 0),int>::type >
-    static void run(int check)
+    template< class I, typename std::enable_if< (size == 1 ),I>::type >
+    static void run(I check)
     {
-         ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
+              ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
     }
+
+    template< class I, typename std::enable_if< (size > 1 ),I>::type >
+    static void run(I check)
+    {
+              ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
+    }
+
+
+
+
+    //
+    // template< class I>
+    // static typename Wrap<typename std::enable_if< (size > 1),I>::type>::type  run(I check)
+    // {
+    //           ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
+    // }
+
+
+   //
+   //
+  //  template< class I>
+  //  static typename std::enable_if< (size == 1),I>::type  run(I check)
+  //   {
+  //                  ( H::value == check ) ? H::proc() : Switch<Tail...>::run(check);
+  //   }
+   //
+
+
+
 
 
 };
