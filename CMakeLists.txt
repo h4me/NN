@@ -16,7 +16,25 @@ endif()
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(PROJECT_SOURCE_DIR ${PROJECT_BINARY_DIR}/src)
+SET(PARTY_DIR ${PROJECT_BINARY_DIR}/3party)
 
+
+
+LINK_DIRECTORIES(${PARTY_DIR}/google_test/lib/x86_64-linux-gnu/)
+include_directories( ${PARTY_DIR}/google_test/include)
+
+# include(External-GTest.cmake)
+
+
+add_executable(tests_app src/tests.cpp)
+target_link_libraries(tests_app gtest gmock_main gmock pthread )
+
+
+add_custom_command(TARGET tests_app POST_BUILD
+    COMMAND ${PROJECT_BINARY_DIR}/bin/tests_app
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Running Tests check..."
+)
 
 
 add_executable(neuron ${PROJECT_SOURCE_DIR}/main.cpp)
