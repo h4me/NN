@@ -7,6 +7,7 @@
 #include <list>
 #include <stdlib.h>
 #include <fstream>
+#include <cmath>
 namespace fmt {
      template<int V>
      struct address { enum { value = V };  };
@@ -101,6 +102,27 @@ class Column {
            });
 
           std::cout << std::endl;
+      }
+
+
+      Column getNewSoftMaxColumn()
+      {
+              Column c(size);
+
+              /*
+
+                                e^xi
+                    C[i] =     --------
+                            e^x1 + e^x2 + e^xn ;
+
+
+              */
+                    double sum=0;
+                    std::for_each(begin(),end(),[&sum](double v){  sum+=exp(v); });
+                    std::transform(begin(), end(), c.begin(), [sum](double v){  return exp(v)/sum;   });
+
+
+              return c;
       }
 };
 
@@ -582,6 +604,10 @@ for(auto& _matrix_layout : layout_list)
 
 final_column_size.show("final_columns");
 
+
+auto soft_max_column = final_column_size.getNewSoftMaxColumn();
+
+soft_max_column.show("softmax");
 
 
 /*
