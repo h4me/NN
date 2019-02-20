@@ -9,7 +9,7 @@ void generic_read(std::ifstream& file, T& data)
 {
       if(!file)
       {
-          log_err("File is not opened";)
+          log_err("File is not opened")
       }
 
      file.read(reinterpret_cast<char*>(&data),sizeof(T));
@@ -41,11 +41,15 @@ std::ostream& operator<<(std::ostream& o ,  Matrix_28_28& data)
     return o;
 }
 
+
+template<class T>
+using Vector = std::vector<T>;
+
+
 template<class THeader,class TRecordData>
-U32 LoadData(const std::string& file_name,std::vector<TRecordData>& v_matrix)
+U32 LoadData(const std::string& file_name,Vector<TRecordData>& v_matrix)
 {
 
- //    std::string file_name = "./bin/mnist/train-images-idx3-ubyte.gz.raw";
     std::ifstream file(file_name.c_str());
     if(!file)
     {
@@ -57,13 +61,13 @@ U32 LoadData(const std::string& file_name,std::vector<TRecordData>& v_matrix)
     generic_read(file, hd);
     if(!hd.validate())
     {
-        log_err("Validation fails");
+        log_err("Validation fails "<< file_name);
         return 0;
     }
 
     if(v_matrix.size() != hd.count)
     {
-        log_err("Incorrect init vector");
+        log_err("Incorrect init vector " << file_name << " hd.count " << hd.count << " " << v_matrix.size());
         return 0;
     }
 
@@ -72,29 +76,53 @@ U32 LoadData(const std::string& file_name,std::vector<TRecordData>& v_matrix)
          generic_read(file, v_matrix[i]);
     }
 
-
     file.close();
-
-//    log("HD " << hd );
 
     return 1;
 }
 
+
+
+
+
 int main(int argc, char** argv)
 {
 
+    Vector<Matrix_28_28> train_images(IMAGE_FILE_HEADER_TRAIN_T::limit);
 
-
-    std::vector<Matrix_28_28> v_matrix(60000);
-
-    if(! LoadData<IMAGE_FILE_HEADER_T,Matrix_28_28>("./bin/mnist/train-images-idx3-ubyte.gz.raw",v_matrix) )
+    if(! LoadData<IMAGE_FILE_HEADER_TRAIN_T>("./bin/mnist/train-images-idx3-ubyte.gz.raw",train_images) )
     {
-        log_err("Error Image file");
+        log_err("Error load Image train file");
         return 1;
     }
 
-    log( v_matrix[0] );
+    Vector<BYTE> train_labels(LABEL_FILE_HEADER_TRAIN_T::limit);
 
+    if(! LoadData<LABEL_FILE_HEADER_TRAIN_T>("./bin/mnist/train-labels-idx1-ubyte.gz.raw",train_labels) )
+    {
+        log_err("Error load train labels ");
+        return 1;
+    }
+
+/***************************************************/
+
+      Vector<Matrix_28_28> test_images(IMAGE_FILE_HEADER_TEST_T::limit);
+
+      if(! LoadData<IMAGE_FILE_HEADER_TEST_T>("./bin/mnist/t10k-images-idx3-ubyte.gz.raw",test_images) )
+      {
+          log_err("Error load Image test file");
+          return 1;
+      }
+
+      log( test_images[0] );
+
+      Vector<BYTE> test_labels(LABEL_FILE_HEADER_TEST_T::limit);
+
+      if(! LoadData<LABEL_FILE_HEADER_TEST_T>("./bin/mnist/t10k-labels-idx1-ubyte.gz.raw",test_labels) )
+      {
+          log_err("Error load train labels ");
+          return 1;
+      }
 
 
 
