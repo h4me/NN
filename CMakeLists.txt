@@ -39,3 +39,4 @@ add_custom_command(TARGET tests_app POST_BUILD
 
 add_executable(neuron ${PROJECT_SOURCE_DIR}/main.cpp)
 add_executable(poc ${PROJECT_SOURCE_DIR}/poc.cpp)
+add_executable(mnist_loader ${PROJECT_SOURCE_DIR}/mnist_loader.cpp)
