@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <iomanip>
+#include <memory>
 #include "mnist_format.hpp"
 
 template<class T>
@@ -82,6 +83,28 @@ U32 LoadData(const std::string& file_name,Vector<TRecordData>& v_matrix)
 }
 
 
+template<class T>
+using Shared = std::shared_ptr<T>;
+
+template<class T>
+class Matrix {
+     U32 x;
+     U32 y;
+     Shared<T> buff;
+
+public:
+       Matrix(U32 x, U32 y) : x(x), y(y)
+       {
+            buff = Shared<T>(new T[x*y], std::default_delete<T[]>());
+            if(!buff)
+            {
+              log_err("Can not allocate memory for buff");
+            }
+       }
+
+
+};
+
 
 
 
@@ -120,7 +143,7 @@ int main(int argc, char** argv)
 
       if(! LoadData<LABEL_FILE_HEADER_TEST_T>("./bin/mnist/t10k-labels-idx1-ubyte.gz.raw",test_labels) )
       {
-          log_err("Error load train labels ");
+          log_err("Error load test labels ");
           return 1;
       }
 
@@ -128,37 +151,8 @@ int main(int argc, char** argv)
 
 
 
-     // std::string file_name = "./bin/mnist/train-images-idx3-ubyte.gz.raw";
-     // std::ifstream file(file_name.c_str());
-     // if(!file)
-     // {
-     //    log("Can not open file " << file_name);
-     //    return 0;
-     // }
-     //
-     // IMAGE_FILE_HEADER_T hd;
-     // generic_read(file, hd);
-     // if(!hd.validate())
-     // {
-     //     log_err("Validation fails");
-     //     return 1;
-     // }
-     //
-     // std::vector<Matrix_28_28> v_matrix(60000);
-     //
-     //
-     // for(size_t i=0;i<hd.count;++i)
-     // {
-     //      generic_read(file, v_matrix[i]);
-     // }
-     //
-     //
-     // file.close();
-     //
-     //
-     // log("HD " << hd );
-     //
-     // log( v_matrix[0]);
+
+
 
     return 0;
 }
