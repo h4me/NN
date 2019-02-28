@@ -4,35 +4,47 @@
 #include <iomanip>
 #include <memory>
 #include "mnist_format.hpp"
+#include <type_traits>
+
+namespace std {
+template<bool V, class T = void>
+using enable_if_t = typename std::enable_if<V,T>::type;
+}
 
 template<class T>
-void generic_read(std::ifstream& file, T& data)
+void generic_read(size_t index, std::ifstream& file, T& data)
 {
       if(!file)
       {
           log_err("File is not opened")
+          exit(1);
       }
 
      file.read(reinterpret_cast<char*>(&data),sizeof(data));
 
-     if(!file)
-        log_err("Can not read content");
+     if(!file) {
+        log_err("Can not read content index=" << index);
+        exit(1);
+     }
 
 }
 
 template<class T>
-void generic_read(std::ifstream& file, T* data, size_t size)
+void generic_read(size_t index, std::ifstream& file, T* data, size_t size)
 {
       if(!file)
       {
           log_err("File is not opened")
+          exit(1);
       }
 
      file.read(reinterpret_cast<char*>(data),size);
 
      if(!file)
-        log_err("Can not read content");
-
+     {
+        log_err("Can not read content index=" << index);
+        exit(1);
+     }
 }
 
 
@@ -64,7 +76,7 @@ template<class T>
 using Vector = std::vector<T>;
 
 
-template<class THeader,class TRecordData>
+template<class THeader,class TRecordData,class Filter=std::enable_if_t< std::is_same< TRecordData,Matrix_28_28  >::value || std::is_same< TRecordData,BYTE  >::value , TRecordData > >
 U32 LoadData(const std::string& file_name,Vector<TRecordData>& v_matrix)
 {
 
@@ -76,7 +88,7 @@ U32 LoadData(const std::string& file_name,Vector<TRecordData>& v_matrix)
     }
 
     THeader hd;
-    generic_read(file, hd);
+    generic_read(0,file, hd);
     if(!hd.validate())
     {
         log_err("Validation fails "<< file_name);
@@ -91,7 +103,7 @@ U32 LoadData(const std::string& file_name,Vector<TRecordData>& v_matrix)
 
     for(size_t i=0;i<hd.count;++i)
     {
-         generic_read(file, v_matrix[i]);
+         generic_read(i,file, v_matrix[i]);
     }
 
     file.close();
@@ -99,13 +111,12 @@ U32 LoadData(const std::string& file_name,Vector<TRecordData>& v_matrix)
     return 1;
 }
 
-template<size_t x, size_t y, class T>
+template<U32 x, U32 y, class T>
 struct StaticMatrix;
 
 template<class THeader,U32 H, U32  W, class T>
 U32 LoadData(const std::string& file_name,Vector< StaticMatrix<H,W,T> >& v_matrix)
 {
-
 
     std::ifstream file(file_name.c_str());
     if(!file)
@@ -115,22 +126,35 @@ U32 LoadData(const std::string& file_name,Vector< StaticMatrix<H,W,T> >& v_matri
     }
 
     THeader hd;
-    generic_read(file, hd);
+    generic_read(0,file, hd);
     if(!hd.validate())
     {
         log_err("Validation fails "<< file_name);
         return 0;
     }
 
-    if(H*W != hd.count)
+    if(v_matrix.size() != hd.count)
     {
         log_err("Incorrect init vector " << file_name << " hd.count " << hd.count << " " << v_matrix.size());
         return 0;
     }
 
+    if(v_matrix[0].total_space() != H*W*sizeof(T) )
+    {
+        log_err("Error incorrect total_space");
+        exit(1);
+    }
+
+    if(&(v_matrix[0].get_and_set(0,0)) != v_matrix[0].begin())
+    {
+        log_err("Incorrect pointer");
+        exit(1);
+    }
+
+
     for(size_t i=0;i<hd.count;++i)
     {
-         generic_read(file, &v_matrix.get_and_set(0,0) , H*W*sizeof(T));
+         generic_read(i,file, &(v_matrix[i].get_and_set(0,0)) , H*W*sizeof(T));
     }
 
     file.close();
@@ -172,6 +196,10 @@ public:
               log_err("Can not allocate memory for buff");
             }
        }
+
+      size_t total_space() const { return x*y*sizeof(T);  }
+      T* begin() { return  reinterpret_cast<T*>(buff.get()); }
+      T* end() { return begin()+(x*y);  }
 
        const T& get(size_t _x, size_t _y) const
        {
@@ -216,7 +244,7 @@ public:
 
 };
 
-template<size_t x, size_t y, class T>
+template<U32 x, U32 y, class T>
 struct StaticMatrix : public Matrix<T> {
           enum { value_x = x, value_y = y };
           typedef T value_type;
@@ -281,15 +309,29 @@ Matrix<T> Conv(const Matrix<T>& m_in, const Kernel<T>& m_mask)
 }
 
 template<class T>
+inline void show_cell(std::ostream& out,const Matrix<T>& m,size_t i, size_t j)
+{
+    out << "|" << std::setfill(' ') << std::setw(4) << std::dec << m.get(i,j);
+}
+
+
+inline void show_cell(std::ostream& out,const Matrix<BYTE>& m,size_t i, size_t j)
+{
+    out << "|" << std::setfill(' ') << std::setw(4) << std::dec << (U32)m.get(i,j);
+}
+
+
+template<class T>
 std::ostream& operator<<(std::ostream& out, const Matrix<T>& m)
 {
+
     for(size_t i=0;i<m.x;++i)
     {
         for(size_t j=0;j<m.y;++j)
         {
-            std::cout << "|" << std::setfill(' ') << std::setw(4) << std::dec << m.get(i,j);
+             show_cell(out,m,i,j);
         }
-         std::cout << std::endl;
+         out << std::endl;
     }
 
     return out;
@@ -297,71 +339,42 @@ std::ostream& operator<<(std::ostream& out, const Matrix<T>& m)
 
 
 
+template<class HEAD,class V>
+void LoadMatrix(const std::string& path, V& v)
+{
+    if(! LoadData<HEAD>(path,v) )
+    {
+              log_err("Error load file " << path);
+              exit(1);
+    }
+
+}
+
 
 int main(int argc, char** argv)
 {
 
-     Kernel<double> kernel(3,3);
-     Matrix<double> m(20,20);
+   std::string root_folder = "./bin/mnist/";
 
-    // m.test();
+   Vector<StaticMatrix<28,28,BYTE>> train_images(IMAGE_FILE_HEADER_TRAIN_T::limit);
+   Vector<StaticMatrix<28,28,BYTE>> test_images(IMAGE_FILE_HEADER_TEST_T::limit);
 
-     //std::cout << m.get(2,2) << std::endl;
+   Vector<BYTE> train_labels(LABEL_FILE_HEADER_TRAIN_T::limit);
+   Vector<BYTE> test_labels(LABEL_FILE_HEADER_TEST_T::limit);
 
-    //auto pppp = Conv(m,kernel);
-    //log( pppp );
+   LoadMatrix<IMAGE_FILE_HEADER_TRAIN_T>(root_folder+"train-images-idx3-ubyte.gz.raw",train_images);
+   LoadMatrix<LABEL_FILE_HEADER_TRAIN_T>(root_folder+"train-labels-idx1-ubyte.gz.raw",train_labels);
+   LoadMatrix<IMAGE_FILE_HEADER_TEST_T>(root_folder+"t10k-images-idx3-ubyte.gz.raw",test_images);
+   LoadMatrix<LABEL_FILE_HEADER_TEST_T>(root_folder+"t10k-labels-idx1-ubyte.gz.raw",test_labels);
 
-    //
-    // Vector<StaticMatrix<28, 28, U32 >> train_images_static(IMAGE_FILE_HEADER_TRAIN_T::limit);
-    //
-    // if(! LoadData<IMAGE_FILE_HEADER_TRAIN_T>("./bin/mnist/train-images-idx3-ubyte.gz.raw",train_images_static) )
-    // {
-    //         log_err("Error load Image train file");
-    //         return 1;
-    // }
+   log( train_images[0] );
 
 
+   Kernel<double> kernel(3,3);
+   Matrix<double> m(20,20);
 
-    Vector<Matrix_28_28> train_images(IMAGE_FILE_HEADER_TRAIN_T::limit);
-
-    if(! LoadData<IMAGE_FILE_HEADER_TRAIN_T>("./bin/mnist/train-images-idx3-ubyte.gz.raw",train_images) )
-    {
-        log_err("Error load Image train file");
-        return 1;
-    }
-
-    Vector<BYTE> train_labels(LABEL_FILE_HEADER_TRAIN_T::limit);
-
-    if(! LoadData<LABEL_FILE_HEADER_TRAIN_T>("./bin/mnist/train-labels-idx1-ubyte.gz.raw",train_labels) )
-    {
-        log_err("Error load train labels ");
-        return 1;
-    }
-
-/***************************************************/
-
-      Vector<Matrix_28_28> test_images(IMAGE_FILE_HEADER_TEST_T::limit);
-
-      if(! LoadData<IMAGE_FILE_HEADER_TEST_T>("./bin/mnist/t10k-images-idx3-ubyte.gz.raw",test_images) )
-      {
-          log_err("Error load Image test file");
-          return 1;
-      }
-
-      log( test_images[0] );
-
-      Vector<BYTE> test_labels(LABEL_FILE_HEADER_TEST_T::limit);
-
-      if(! LoadData<LABEL_FILE_HEADER_TEST_T>("./bin/mnist/t10k-labels-idx1-ubyte.gz.raw",test_labels) )
-      {
-          log_err("Error load test labels ");
-          return 1;
-      }
-
-
-
-
-
+   auto matrix_convolve = Conv(m,kernel);
+   log( matrix_convolve );
 
 
 
