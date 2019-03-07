@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_CXX_COMPILER "clang++-3.6")
+#set(CMAKE_CXX_COMPILER "clang++-3.6")
+set(CMAKE_CXX_COMPILER "g++")
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
@@ -12,6 +13,13 @@ else()
         message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+# cmake -DCMAKE_BUILD_TYPE=Debug
+
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
+    message("debug mode enabled")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pg")
+
+ENDIF() 
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
@@ -40,3 +48,8 @@ add_custom_command(TARGET tests_app POST_BUILD
 add_executable(neuron ${PROJECT_SOURCE_DIR}/main.cpp)
 add_executable(poc ${PROJECT_SOURCE_DIR}/poc.cpp)
 add_executable(mnist_loader ${PROJECT_SOURCE_DIR}/mnist_loader.cpp)
+
+
+
+message(STATUS " FLAGS : ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_FLAGS_DEBUG} ")
+
