@@ -20,8 +20,8 @@ SET(PARTY_DIR ${PROJECT_BINARY_DIR}/3party)
 
 
 
-LINK_DIRECTORIES(${PARTY_DIR}/google_test/lib/x86_64-linux-gnu/)
-include_directories( ${PARTY_DIR}/google_test/include)
+LINK_DIRECTORIES(${PARTY_DIR}/google_test_16/lib/)
+include_directories( ${PARTY_DIR}/google_test_16/include)
 
 # include(External-GTest.cmake)
 
